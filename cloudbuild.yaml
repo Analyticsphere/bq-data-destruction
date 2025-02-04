@@ -1,12 +1,12 @@
 steps:
-  # Step 1: Install dependencies
-  - name: "gcr.io/cloud-builders/gcloud"
+  # Step 1: Install dependencies using a Python image
+  - name: "python:3.11"
     entrypoint: "bash"
     args:
       - "-c"
       - "pip install -r requirements.txt"
 
-  # Step 2: Deploy the Cloud Function
+  # Step 2: Deploy the Cloud Function using gcloud
   - name: "gcr.io/cloud-builders/gcloud"
     args:
       - "functions"
@@ -23,4 +23,4 @@ steps:
       - "."
 
 options:
-  logging: CLOUD_LOGGING_ONLY
+  logging: CLOUD_LOGGING_ONLY  # Ensures logs are stored in Cloud Logging
