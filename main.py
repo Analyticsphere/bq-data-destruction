@@ -47,13 +47,22 @@ def run_bq_data_destruction(request):
         protocol = request_json.get("protocol")
         connect_ids = request_json.get("connect_ids")
 
-        # Validate inputs
+        # Validate protocol
         if not protocol or not isinstance(protocol, str):
             return json.dumps({"error": "Missing or invalid parameter: protocol (str)"}), 400
         if protocol not in supported_protocols:
             return json.dumps({"error": f"'{protocol}' is not a supported protocol. Allowed: {list(supported_protocols.keys())}"}), 400
-        if not connect_ids or not isinstance(connect_ids, list):
+
+        # Validate connect_ids
+        if connect_ids is None:
+            return json.dumps({"error": "Missing required parameter: connect_ids"}), 400
+        if not isinstance(connect_ids, list):
+            return json.dumps({"error": "connect_ids must be a list of strings"}), 400
+        if not connect_ids:  # Check if list is empty
             return json.dumps({"error": "connect_ids must be a non-empty list"}), 400
+
+        # Convert all items to strings (ensuring correct data type for BigQuery)
+        connect_ids = [str(id) for id in connect_ids]
 
         # Retrieve protocol config
         protocol_config = supported_protocols[protocol]
@@ -77,7 +86,7 @@ def delete_row(dataset: str, table: str, connect_ids: list):
         # Query to find existing Connect_IDs
         check_query = f"""
         SELECT Connect_ID FROM `{project}.{dataset}.{table}`
-        WHERE Connect_ID IN UNNEST(@connect_ids)
+        WHERE CAST(Connect_ID AS STRING) IN UNNEST(@connect_ids)
         """
         check_job = client.query(check_query, job_config=bigquery.QueryJobConfig(
             query_parameters=[bigquery.ArrayQueryParameter("connect_ids", "STRING", connect_ids)]
