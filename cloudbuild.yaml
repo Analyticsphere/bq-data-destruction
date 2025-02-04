@@ -11,7 +11,7 @@ steps:
     args:
       - "functions"
       - "deploy"
-      - "run_bq_data_destruction"
+      - "run-bq-data-destruction"
       - "--runtime"
       - "python311"
       - "--trigger-http"

@@ -17,7 +17,6 @@ For full API documentation, response codes, and examples, see the README.md file
 """
 
 
-
 import json
 import functions_framework
 from google.cloud import bigquery
@@ -33,10 +32,10 @@ supported_protocols = {
     }
 }
 
-
 # Initialize BigQuery client
 client = bigquery.Client()
 
+# Endpoint
 @functions_framework.http
 def run_bq_data_destruction(request):
     """Cloud Function to delete rows from a specified BigQuery table based on Connect_IDs."""
@@ -59,7 +58,7 @@ def run_bq_data_destruction(request):
         protocol_config = supported_protocols[protocol]
         function_name = protocol_config["function"]
 
-        # Check which function to call explicitly instead of using globals()
+        # Check which function to call - Allows for additional functions, e.g. mask_fields, to be added for future use cases
         if function_name == "delete_row":
             return delete_row(protocol_config["dataset"], protocol_config["table"], connect_ids)
         else:
@@ -67,7 +66,6 @@ def run_bq_data_destruction(request):
 
     except Exception as e:
         return json.dumps({"error": str(e)}), 500
-
 
 def delete_row(dataset: str, table: str, connect_ids: list):
     """Deletes rows from the specified BigQuery dataset/table based on Connect_IDs."""
