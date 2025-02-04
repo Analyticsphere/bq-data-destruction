@@ -80,13 +80,15 @@ def run_bq_data_destruction(request):
 def delete_row(dataset: str, table: str, connect_ids: list):
     """Deletes rows from the specified BigQuery dataset/table based on Connect_IDs."""
     
+    connect_ids = [str(id).strip() for id in connect_ids]  # Strip spaces
+
     try:
         project = client.project
 
         # Query to find existing Connect_IDs
         check_query = f"""
-        SELECT Connect_ID FROM `{project}.{dataset}.{table}`
-        WHERE CAST(Connect_ID AS STRING) IN UNNEST(@connect_ids)
+        SELECT Connect_ID FROM `ForTestingOnly.roi_physical_activity`
+        WHERE TRIM(Connect_ID) IN UNNEST(@connect_ids)
         """
         check_job = client.query(check_query, job_config=bigquery.QueryJobConfig(
             query_parameters=[bigquery.ArrayQueryParameter("connect_ids", "STRING", connect_ids)]
