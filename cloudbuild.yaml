@@ -21,3 +21,6 @@ steps:
       - "run_bq_data_destruction"
       - "--source"
       - "."
+
+options:
+  logging: CLOUD_LOGGING_ONLY
