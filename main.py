@@ -20,6 +20,7 @@ For full API documentation, response codes, and examples, see the README.md file
 import json
 import functions_framework
 from google.cloud import bigquery
+import logging
 
 # Define allowed protocols with associated function names. 
 # Note: I use this supported_protocols object so that I can extend it to include future use cases such as "mask_fields" 
@@ -69,7 +70,7 @@ def run_bq_data_destruction(request):
 
 def delete_row(dataset: str, table: str, connect_ids: list):
     """Deletes rows from the specified BigQuery dataset/table based on Connect_IDs."""
-
+    
     try:
         project = client.project
 
@@ -81,15 +82,23 @@ def delete_row(dataset: str, table: str, connect_ids: list):
         check_job = client.query(check_query, job_config=bigquery.QueryJobConfig(
             query_parameters=[bigquery.ArrayQueryParameter("connect_ids", "STRING", connect_ids)]
         ))
+
         existing_ids = {row["Connect_ID"] for row in check_job.result()}
+
+        # Log the results for debugging
+        logging.info(f"Existing IDs found: {existing_ids}")
 
         # Determine IDs that were not found
         not_found_ids = list(set(connect_ids) - existing_ids)
 
         if not existing_ids:
-            return json.dumps({"message": "No matching Connect_IDs found", "not_found": not_found_ids}), 200
+            logging.info("No matching Connect_IDs found.")
+            return json.dumps({
+                "message": "No matching Connect_IDs found",
+                "not_found": not_found_ids
+            }), 200
 
-        # Delete records using a parameterized query (more secure)
+        # Proceed with delete operation
         delete_query = f"""
         DELETE FROM `{project}.{dataset}.{table}`
         WHERE Connect_ID IN UNNEST(@connect_ids)
@@ -97,7 +106,7 @@ def delete_row(dataset: str, table: str, connect_ids: list):
         delete_job = client.query(delete_query, job_config=bigquery.QueryJobConfig(
             query_parameters=[bigquery.ArrayQueryParameter("connect_ids", "STRING", list(existing_ids))]
         ))
-        delete_job.result()  # Wait for query to complete
+        delete_job.result()
 
         return json.dumps({
             "message": f"Deleted {len(existing_ids)} records from {project}.{dataset}.{table}",
@@ -106,4 +115,5 @@ def delete_row(dataset: str, table: str, connect_ids: list):
         }), 200
 
     except Exception as e:
-        return json.dumps({"error": str(e)}), 500
+        logging.error(f"Query failed: {str(e)}")
+        return json.dumps({"error": f"Query execution failed: {str(e)}"}), 500
