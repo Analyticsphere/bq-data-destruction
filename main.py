@@ -59,10 +59,9 @@ def run_bq_data_destruction(request):
         protocol_config = supported_protocols[protocol]
         function_name = protocol_config["function"]
 
-        # Dynamically call the specified function
-        function_to_call = globals().get(function_name)
-        if function_to_call:
-            return function_to_call(protocol_config["dataset"], protocol_config["table"], connect_ids)
+        # Check which function to call explicitly instead of using globals()
+        if function_name == "delete_row":
+            return delete_row(protocol_config["dataset"], protocol_config["table"], connect_ids)
         else:
             return json.dumps({"error": f"Function '{function_name}' not implemented"}), 500
 
