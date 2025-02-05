@@ -1,5 +1,5 @@
 steps:
-  - name: "gcr.io/cloud-builders/bq"
+  - name: "gcr.io/cloud-builders/bq:v2.0.93"
     args:
       - query
       - --use_legacy_sql=false
