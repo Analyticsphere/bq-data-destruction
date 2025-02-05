@@ -22,8 +22,8 @@ import logging
 # Define allowed protocols with associated function names.
 supported_protocols = {
     "roi_physical_activity": {
-        "dataset": "ForTestingOnly",      # TODO: Change to "ROI" after testing
-        "table": "roi_physical_activity", # TODO: Change to "physical_activity" after testing
+        "dataset": "ROI",             
+        "table": "physical_activity", 
         "function": "delete_row"  
     }
 }
