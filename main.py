@@ -48,7 +48,7 @@ def run_bq_data_destruction(request):
             return validation_result  
 
         # Retrieve protocol config
-        protocol_config = supported_protocols.get(protocol)
+        protocol_config = supported_protocols.get(protocol) 
         if not protocol_config:
             logging.error(f"Unsupported protocol: {protocol}")
             return json_response({"error": f"Unsupported protocol: {protocol}"}, 400)
@@ -60,7 +60,7 @@ def run_bq_data_destruction(request):
             return delete_row(protocol_config["dataset"], protocol_config["table"], connect_ids)
         else:
             logging.error(f"Function '{function_name}' not implemented.")
-            return json_response({"error": f"Function '{function_name}' not implemented"}, 500)
+            return json_response({"error": f"Function '{function_name}' not implemented"}, 501)
 
     except Exception as e:
         logging.error(f"Unexpected error: {str(e)}")
@@ -79,14 +79,11 @@ def validate_request(request):
     connect_ids = request_json.get("connect_ids")
 
     # Validate protocol
-    if not isinstance(protocol, str):
-        logging.error(f"Invalid or missing protocol: {protocol}")
-        return json_response({"error": "Missing or invalid parameter: protocol (str)"}, 400)
     if protocol not in supported_protocols:
         logging.error(f"Unsupported protocol: {protocol}")
         return json_response({"error": f"'{protocol}' is not a supported protocol. Allowed: {list(supported_protocols.keys())}"}, 400)
 
-    # Validate connect_ids
+    # Validate connect_ids 
     if not isinstance(connect_ids, list):  
         logging.error(f"Invalid connect_ids type: {type(connect_ids)} - Value: {connect_ids}")
         return json_response({"error": "connect_ids must be a list of strings"}, 400)
@@ -116,13 +113,13 @@ def delete_row(dataset: str, table: str, connect_ids: list):
             query_parameters=[bigquery.ArrayQueryParameter("connect_ids", "STRING", connect_ids)]
         ))
 
-        existing_ids = {row["Connect_ID"] for row in check_job.result()}
+        existing_ids = {row["Connect_ID"] for row in check_job.result()} 
         logging.info(f"Existing IDs found: {existing_ids}")
 
         # Determine IDs that were not found
         not_found_ids = list(set(connect_ids) - existing_ids)
 
-        if not existing_ids:
+        if not existing_ids and len(existing_ids) == 0: 
             logging.info("No matching Connect_IDs found.")
             return json_response({"message": "No matching Connect_IDs found", "not_found": not_found_ids}, 200)
 
@@ -137,7 +134,7 @@ def delete_row(dataset: str, table: str, connect_ids: list):
         delete_job.result()
 
         return json_response({
-            "message": f"Deleted {len(existing_ids)} records from {project}.{dataset}.{table}",
+            "message": f"Deleted records for {len(existing_ids)} participants from {project}.{dataset}.{table}",
             "deleted_ids": list(existing_ids),
             "not_found": not_found_ids
         }, 200)
