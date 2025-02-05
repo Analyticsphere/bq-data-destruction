@@ -1,80 +1,189 @@
 # BigQuery Data Destruction Cloud Function
 
 ## Overview
-This Google Cloud Function (`run_bq_data_destruction`) allows authorized users to delete rows from a predefined BigQuery table based on a list of `Connect_IDs`. It enforces strict protocol validation to prevent accidental or unauthorized data deletion. Future extensions can include soft deletions (`mask_fields`) where certain fields are nullified instead of deleting rows.
+This Google Cloud Function deletes rows from a specified BigQuery table based on a list of `Connect_IDs`. The function dynamically infers the GCP project it is running in, making it suitable for **dev, stg, and prod** environments.
 
-## API Endpoint
-- **URL:** `POST /run_bq_data_destruction`
-- **Authentication:** Requires a Bearer token if IAM authentication is enabled.
+## Use Case
+The initial use case is to allow DevOps to trigger data destruction for the `ROI.physical_activity` table when a participant requests data destruction. The code simply deletes all rows from the table associated with the `Connect_ID` as no data must be retained for this use case.
 
-## Request Format
-### **Headers**
-```http
-Content-Type: application/json
-Authorization: Bearer <TOKEN>
+This function can be modified to incorporate future use cases, but a separate REST API call must be made with the appropriate `dataset` and `table`. This will allow for more complex workflows for future use cases if required.
+
+---
+
+## **Usage**
+To invoke the function, send a **POST** request with the required parameters.
+
+### **Base Endpoint**
+```bash
+export PROJECT_ID=$(gcloud config get-value project)
+export REGION="us-central1"
+export FUNCTION_URL="https://$REGION-$PROJECT_ID.cloudfunctions.net/run_bq_data_destruction"
 ```
 
-### **Body (JSON)**
-```json
-{
+### Consider the following example table for `ROI.physical_activity`
+
+| Connect_ID   | d_449038410 | d_205380968 | d_416831581           |
+|-------------|-------------|-------------|------------------------|
+| 4806091014  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 8576196328  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 4800072280  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 3860352953  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 9824541704  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 9177068756  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 4335003653  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 3344744505  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 6019020541  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+| 6759772253  | 104593854   | 104430631   | 2025-01-27T20:24:58.961Z |
+
+
+### **Example Request**
+```bash
+curl -X POST "$FUNCTION_URL" \
+-H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{
   "protocol": "roi_physical_activity",
-  "connect_ids": ["123456789", "987654321"]
-}
+  "connect_ids": ["4806091014", "8576196328", "4800072280"]
+}'
 ```
 
-## Supported Protocols
-Currently, the function supports the following protocol(s):
-
-| Protocol Name          | Dataset | Table               | Operation |
-|------------------------|---------|---------------------|------------|
-| `roi_physical_activity` | ROI     | physical_activity  | Deletes rows |
-
-## Response Codes & Examples
-
-| HTTP Code | Meaning |
-|-----------|------------------------------------------------|
-| **200** OK | Successful deletion or no matching `Connect_IDs` found. |
-| **400** Bad Request | Missing parameters, incorrect data types, or unsupported protocol. |
-| **500** Internal Server Error | Unexpected processing error. |
-
-### **Success - Rows Deleted**
+### **Example Response**
 ```json
 {
-  "message": "Deleted 2 records from PROJECT_ID.ROI.physical_activity",
-  "deleted_ids": ["123456789", "987654321"],
+  "message": "Deleted records for 3 participants from nih-nci-dceg-connect-dev.ForTestingOnly.roi_physical_activity",
+  "deleted_ids": ["4800072280", "4806091014", "8576196328"],
   "not_found": []
 }
 ```
 
-### **Success - No Matching Records**
+---
+
+## **Test Cases**
+
+### **1. Deleting Existing Connect_IDs**
+```bash
+curl -X POST "$FUNCTION_URL" \
+-H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{"protocol": "roi_physical_activity", "connect_ids": ["4806091014", "8576196328", "4800072280"]}'
+```
+
+Expected Response:
+```json
+{
+  "message": "Deleted records for 3 participants from nih-nci-dceg-connect-dev.ForTestingOnly.roi_physical_activity",
+  "deleted_ids": ["4800072280", "4806091014", "8576196328"],
+  "not_found": []
+}
+```
+
+---
+
+### **2. Some IDs Exist, Some Do Not**
+```bash
+curl -X POST "$FUNCTION_URL" \
+-H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{"protocol": "roi_physical_activity", "connect_ids": ["3344744505", "3860352953", "0000000000"]}'
+```
+
+Expected Response:
+```json
+{
+  "message": "Deleted records for 2 participants from nih-nci-dceg-connect-dev.ForTestingOnly.roi_physical_activity",
+  "deleted_ids": ["3344744505", "3860352953"],
+  "not_found": ["0000000000"]
+}
+```
+
+---
+
+### **3. No Matching IDs in the Table**
+```bash
+curl -X POST "$FUNCTION_URL" \
+-H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{"protocol": "roi_physical_activity", "connect_ids": ["0000000000", "1111111111", "2222222222"]}'
+```
+
+Expected Response:
 ```json
 {
   "message": "No matching Connect_IDs found",
-  "not_found": ["555555555"]
+  "not_found": ["0000000000", "2222222222", "1111111111"]
 }
 ```
 
-### **Failure - Invalid Protocol**
+---
+
+### **4. Empty `connect_ids` List (Health Check)**
+```bash
+curl -X POST "$FUNCTION_URL" \
+-H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{"protocol": "roi_physical_activity", "connect_ids": []}'
+```
+
+Expected Response:
 ```json
 {
-  "error": "'random_protocol' is not a supported protocol. Allowed: ['roi_physical_activity']"
+  "message": "No matching Connect_IDs found",
+  "not_found": []
 }
 ```
 
-### **Failure - Internal Server Error**
+---
+
+### **5. Invalid Protocol**
+```bash
+curl -X POST "$FUNCTION_URL" \
+-H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{"protocol": "invalid_protocol", "connect_ids": ["4806091014", "8576196328", "4800072280"]}'
+```
+
+Expected Response:
 ```json
 {
-  "error": "Database connection failed"
+  "error": "'invalid_protocol' is not a supported protocol. Allowed: ['roi_physical_activity']"
 }
 ```
 
-## Deployment & CI/CD
-This function is deployed as a **Google Cloud Function** and is integrated with **Cloud Build** for CI/CD.
-- When a pull request is merged into `dev`, `stg`, or `main`, Cloud Build triggers a deployment.
-- The function automatically infers the GCP project environment (`dev`, `stg`, or `prod`).
+---
 
-## Security Considerations
-- The function only allows deletions for **predefined datasets and tables**.
-- It does **not** accept arbitrary dataset/table names to prevent unintended data loss.
+### **6. Missing `connect_ids` Field**
+```bash
+curl -X POST "$FUNCTION_URL" \
+-H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{"protocol": "roi_physical_activity"}'
+```
 
+Expected Response:
+```json
+{
+  "error": "connect_ids must be a list of strings"
+}
+```
 
+---
+
+### **7. Invalid `connect_ids` Type (Not a List)**
+```bash
+curl -X POST "$FUNCTION_URL" \
+-H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+-H "Content-Type: application/json" \
+-d '{"protocol": "roi_physical_activity", "connect_ids": "4806091014"}'
+```
+
+Expected Response:
+```json
+{
+  "error": "connect_ids must be a list of strings"
+}
+```
+
+---
+
+## **CI/CD and Deployment**
+This REST API is deployed as a Cloud Function via Cloud Run, and the deployment is configured within `cloudbuild.yaml` along with a Cloud Build trigger in each environment, which handles environment variables. The Cloud Build is triggered when a PR is merged with the `dev`, `stg`, or `main` branch.
