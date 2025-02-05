@@ -1,0 +1,10 @@
+steps:
+  - name: "gcr.io/cloud-builders/bq"
+    args:
+      - query
+      - --use_legacy_sql=false
+      - --display_name="bq_data_destruction"
+      - --destination_table=""
+      - --schedule="cron:30 1 * * *"
+      - --replace
+      - < bq_data_destruction.sql
