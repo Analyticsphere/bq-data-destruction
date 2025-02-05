@@ -5,7 +5,7 @@ steps:
       - "-c"
       - |
         # Set the correct project explicitly
-        gcloud config set --project=${_PROJECT_ID}
+        gcloud config set project ${PROJECT_ID}
         # Now deploy the scheduled query
         bq query \
           --use_legacy_sql=false \
