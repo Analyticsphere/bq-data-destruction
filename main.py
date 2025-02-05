@@ -27,8 +27,8 @@ import logging
 #       where the data destruction protocol requires specified fields to be set to NULL for each participant rather than deleting the whole row.
 supported_protocols = {
     "roi_physical_activity": {
-        "dataset": "ForTestingOnly",
-        "table": "physical_activity",
+        "dataset": "ForTestingOnly",      #TODO Change to "ROI" after testing
+        "table": "roi_physical_activity", #TODO Change to "physical_activity" after testing
         "function": "delete_row"  # Specifies the function to call
     }
 }
