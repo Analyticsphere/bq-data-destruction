@@ -8,3 +8,6 @@ steps:
       - --schedule="cron:30 1 * * *"
       - --replace
       - < bq_data_destruction.sql
+
+options:
+  logging: CLOUD_LOGGING_ONLY  # Ensures logs are stored in Cloud Logging

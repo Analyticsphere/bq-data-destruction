@@ -7,6 +7,7 @@ Objective:
   - This query is scheduled to run once daily.
 
 Approach:
+  - Maintain code in GitHub; DO NOT edit in directly in UI
   - Do not hardcode project to enable CI/CD for dev, stg, prod. BQ will use current project by default.
   - Extend easily by adding additional DDL statements as needed.
   - Cannot use CTEs with DELETE statments
@@ -21,5 +22,5 @@ WHERE Connect_ID IN (
   SELECT Connect_ID
   FROM FlatConnect.participants_JP
   WHERE d_831041022 = '353358909'  -- "Destroy Data" flag is "Yes"
-    AND d_861639549 = '353358909'  -- "Data Has Been Destroyed" flag is "Yes"
+    AND d_861639549 = '353358909'  -- "Data Has Been Destroyed" flag is "Yes"; Ensures DevOps code has run first.
 );
