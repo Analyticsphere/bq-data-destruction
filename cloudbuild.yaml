@@ -12,6 +12,6 @@ steps:
           --display_name="bq_data_destruction" \
           --destination_table="" \
           --schedule="cron:30 1 * * *" \
-          --replace < delete_flagged_data.sql
+          --replace < bq_data_destruction.sql
 options:
   logging: CLOUD_LOGGING_ONLY
