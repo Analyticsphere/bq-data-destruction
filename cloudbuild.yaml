@@ -11,7 +11,6 @@ steps:
           bq update --transfer_config \
             --params="$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')" \
             --schedule='every day 01:30' \
-            --start_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --location=US \
             --service_account_name="$SERVICE_ACCOUNT_EMAIL" \
             "${_RESOURCE_NAME}"
