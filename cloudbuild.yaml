@@ -7,16 +7,13 @@ steps:
           # Install jq
           apt-get update && apt-get install -y jq
           
-          # Use jq to read the SQL file and create a JSON object for the query parameter.
-          QUERY_PARAMS=$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')
-          
           # Create the scheduled query transfer configuration.
           bq mk \
             --transfer_config \
             --display_name="bq_data_destruction" \
-            --params="$QUERY_PARAMS" \
+            --params="$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')" \
             --data_source=scheduled_query \
             --schedule='every day 01:30' \
-            --service_account_name="${SERVICE_ACCOUNT_EMAIL}"
+            --service_account_name="$SERVICE_ACCOUNT_EMAIL"
 options:
   logging: CLOUD_LOGGING_ONLY
