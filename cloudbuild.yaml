@@ -4,12 +4,16 @@ steps:
     args:
       - "-c"
       - |
+          # Use Python to read the SQL file and generate a JSON object.
+          PARAMS=$(python -c 'import sys, json; print(json.dumps({"query": sys.stdin.read()}))' < bq_data_destruction.sql)
+          
+          # Create the scheduled query transfer configuration.
           bq mk \
             --transfer_config \
             --display_name="bq_data_destruction" \
-            --params="$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')" \
+            --params="$PARAMS" \
             --data_source=scheduled_query \
             --schedule='every day 01:30' \
-            --service_account_name="${SERVICE_ACCOUNT_EMAIL}"
+            --service_account_name="${_SERVICE_ACCOUNT}"
 options:
   logging: CLOUD_LOGGING_ONLY
