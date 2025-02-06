@@ -14,6 +14,7 @@ steps:
             --params="$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')" \
             --data_source=scheduled_query \
             --schedule='every day 01:30' \
+            --location=US \
             --service_account_name="$SERVICE_ACCOUNT_EMAIL"
 options:
   logging: CLOUD_LOGGING_ONLY
