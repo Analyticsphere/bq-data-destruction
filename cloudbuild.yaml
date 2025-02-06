@@ -11,8 +11,9 @@ steps:
           bq mk \
             --transfer_config \
             --display_name="bq_data_destruction" \
-            --params="$(jq -n --rawfile query bq_data_destruction.sql '{query: $query, start_time:"2025-02-06T01:30:00Z"}')" \
+            --params="$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')" \
             --data_source=scheduled_query \
+            --start_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --schedule='every day 01:30' \
             --location=US \
             --service_account_name="$SERVICE_ACCOUNT_EMAIL"
