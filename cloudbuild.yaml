@@ -4,13 +4,12 @@ steps:
     args:
       - "-c"
       - |
-        # Set the correct project explicitly
-        gcloud config set project ${PROJECT_ID}
-        # Now deploy the scheduled query
-        bq query \
-          --use_legacy_sql=false \
-          --display_name="bq_data_destruction" \
-          --schedule='every day 06:30' \
-          --replace < bq_data_destruction.sql
+          bq mk \
+            --transfer_config \
+            --display_name="bq_data_destruction" \
+            --params="$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')" \
+            --data_source=scheduled_query \
+            --schedule='every day 01:30' \
+            --service_account_name="${SERVICE_ACCOUNT_EMAIL}"
 options:
   logging: CLOUD_LOGGING_ONLY
