@@ -4,8 +4,11 @@ steps:
     args:
       - "-c"
       - |
-          # Use Python to read the SQL file and create a JSON object.
-          QUERY_PARAMS=$(python -c 'import sys, json; print(json.dumps({"query": sys.stdin.read()}))' < bq_data_destruction.sql)
+          # Install jq
+          apt-get update && apt-get install -y jq
+          
+          # Use jq to read the SQL file and create a JSON object for the query parameter.
+          QUERY_PARAMS=$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')
           
           # Create the scheduled query transfer configuration.
           bq mk \
@@ -17,4 +20,3 @@ steps:
             --service_account_name="${SERVICE_ACCOUNT_EMAIL}"
 options:
   logging: CLOUD_LOGGING_ONLY
-
