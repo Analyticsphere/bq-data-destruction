@@ -10,7 +10,7 @@ steps:
         bq query \
           --use_legacy_sql=false \
           --display_name="bq_data_destruction" \
-          --schedule='every day 01:30' \
+          --schedule='every day 06:30' \
           --replace < bq_data_destruction.sql
 options:
   logging: CLOUD_LOGGING_ONLY
