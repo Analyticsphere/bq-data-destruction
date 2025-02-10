@@ -17,10 +17,10 @@ Approach:
 -----------------------------------------------------------------------------------------------
 -- DDL 1: DELETE ROI Physical Actity Data for Participants that have Requested Data Destruction
 -----------------------------------------------------------------------------------------------
-DELETE FROM ForTestingOnly.roi_physical_activity
+DELETE FROM ROI.physical_activity
 WHERE Connect_ID IN (
-  SELECT Connect_ID
-  FROM FlatConnect.participants_JP
-  WHERE d_831041022 = '353358909'  -- "Destroy Data" flag is "Yes"
-    AND d_861639549 = '353358909'  -- "Data Has Been Destroyed" flag is "Yes"; Ensures DevOps code has run first.
+  SELECT CAST(Connect_ID AS STRING)
+  FROM Connect.participants
+  WHERE d_831041022 = 353358909  -- "Destroy Data" flag is "Yes"
+    AND d_861639549 = 353358909  -- "Data Has Been Destroyed" flag is "Yes"; Ensures DevOps code has run first.
 );
