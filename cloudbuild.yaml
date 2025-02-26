@@ -10,7 +10,7 @@ steps:
           # Update the scheduled query transfer configuration using the pre-defined transfer config ID.
           bq update --transfer_config \
             --params="$(jq -n --rawfile query bq_data_destruction.sql '{query: $query}')" \
-            --schedule='every day 06:30' \
+            --schedule='every day 07:30' \
             --location=US \
             --service_account_name="$SERVICE_ACCOUNT_EMAIL" \
             "${_RESOURCE_NAME}"
